@@ -1,14 +1,54 @@
-#!/usr/bin/env bash
-# script to config domain zone to point to load balancer
-# add more subdomains and display info about them
+#!/bin/bash
 
-domain=$1
-if [ "$#" -eq 2 ]; then
-   sub=$2
-else
-	sub=("www" "lb-01" "web-01" "web-02")
-fi
-for subdomain in "${sub[@]}"; do
-    echo -n "The subdomain $subdomain"
-    dig "$subdomain.$domain" | grep -A1 'ANSWER SECTION:' | tail -n -1 | awk '{ print " is a " $4 " record and points to " $5}'
-done
+# Function to get DNS record information
+get_dns_info() {
+    local domain=$1
+    local subdomain=$2
+    local full_domain
+    
+    if [ -n "$subdomain" ]; then
+        full_domain="${subdomain}.${domain}"
+    else
+        full_domain="${domain}"
+    fi
+    
+    # Use dig to get DNS information and parse with awk
+    dig "$full_domain" | awk -v sub="$subdomain" '
+    /^;; ANSWER SECTION:/ {
+        getline
+        if ($4 == "A") {
+            print "The subdomain", sub, "is a", $4, "record and points to", $5
+        }
+    }'
+}
+
+# Check if dig is available
+check_dig() {
+    if ! command -v dig &> /dev/null; then
+        echo "Error: dig command not found. Please install dnsutils package."
+        echo "Run: sudo apt install dnsutils"
+        exit 1
+    fi
+}
+
+# Main script logic
+main() {
+    local domain=$1
+    local subdomain=$2
+    
+    # Check if dig is available
+    check_dig
+    
+    # If only domain is provided, check specific subdomains in order
+    if [ $# -eq 1 ]; then
+        for sub in www lb-01 web-01 web-02; do
+            get_dns_info "$domain" "$sub"
+        done
+    # If both domain and subdomain are provided
+    elif [ $# -eq 2 ]; then
+        get_dns_info "$domain" "$subdomain"
+    fi
+}
+
+# Call main function with all arguments
+main "$@"
