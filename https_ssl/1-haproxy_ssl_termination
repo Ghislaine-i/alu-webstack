@@ -1,0 +1,21 @@
+global
+    daemon
+    maxconn 256
+
+defaults
+    mode http
+    timeout connect 5000ms
+    timeout client 50000ms
+    timeout server 50000ms
+    option forwardfor
+
+frontend https_frontend
+    bind *:443 ssl crt /etc/ssl/private/www.ghislaine.tech.pem
+    bind *:80
+    redirect scheme https code 301 if !{ ssl_fc }
+    default_backend web_servers
+
+backend web_servers
+    balance roundrobin
+    server web-01 54.88.121.204:80 check
+    server web-02 52.87.157.15:80 check
