@@ -1,49 +1,14 @@
 #!/usr/bin/env bash
-# Function to get DNS information for a subdomain
-get_dns_info() {
-    local domain=$1
-    local subdomain=$2
-    local full_domain="${subdomain}.${domain}"
-    
-    # Use dig to get DNS information
-    local dig_output
-    dig_output=$(dig "$full_domain" +short 2>/dev/null)
-    
-    # Check if we got a response
-    if [ -z "$dig_output" ]; then
-        echo "The subdomain $subdomain is not found"
-        return 1
-    fi
-    
-    # Use awk to parse the IP address
-    local destination
-    destination=$(echo "$dig_output" | awk 'NR==1{print $1}')
-    
-    # Output the result
-    echo "The subdomain $subdomain is a A record and points to $destination"
-}
+# script to config domain zone to point to load balancer
+# add more subdomains and display info about them
 
-# Main function
-main() {
-    local domain=$1
-    local subdomain=$2
-    
-    # If only domain is provided, check default subdomains in specific order
-    if [ -z "$subdomain" ]; then
-        for sub in www lb-01 web-01 web-02; do
-            get_dns_info "$domain" "$sub"
-        done
-    else
-        # If both domain and subdomain are provided, check only that subdomain
-        get_dns_info "$domain" "$subdomain"
-    fi
-}
-
-# Check if at least one argument is provided
-if [ $# -lt 1 ]; then
-    echo "Usage: $0 domain [subdomain]" >&2
-    exit 1
+domain=$1
+if [ "$#" -eq 2 ]; then
+   sub=$2
+else
+	sub=("www" "lb-01" "web-01" "web-02")
 fi
-
-# Call main function with all arguments
-main "$1" "$2"
+for subdomain in "${sub[@]}"; do
+    echo -n "The subdomain $subdomain"
+    dig "$subdomain.$domain" | grep -A1 'ANSWER SECTION:' | tail -n -1 | awk '{ print " is a " $4 " record and points to " $5}'
+done
