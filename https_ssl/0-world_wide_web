@@ -1,46 +1,39 @@
 #!/usr/bin/env bash
-# Script to display DNS information for subdomains
+# Script to display DNS information about domain subdomains
 
 # Function to get DNS information for a subdomain
 get_dns_info() {
-    local domain=$1
-    local subdomain=$2
+    local domain="$1"
+    local subdomain="$2"
     local full_domain="${subdomain}.${domain}"
     
-    # Use dig to get DNS information
-    local dig_output
-    dig_output=$(dig "$full_domain" +short)
+    # Use dig to get the IP address
+    local ip_address
+    ip_address=$(dig "$full_domain" +short 2>/dev/null)
     
-    # Check if we got a response
-    if [ -z "$dig_output" ]; then
-        echo "The subdomain $subdomain is not found"
-        return 1
+    if [ -n "$ip_address" ]; then
+        echo "The subdomain $subdomain is a A record and points to $ip_address"
+    else
+        echo "The subdomain $subdomain is not found for domain $domain"
     fi
-    
-    # Use awk to parse the IP address
-    local destination
-    destination=$(echo "$dig_output" | awk 'NR==1')
-    
-    # Output the result in exact required format
-    echo "The subdomain $subdomain is a A record and points to $destination"
 }
 
-# Main logic
-if [ $# -lt 1 ]; then
-    echo "Usage: $0 domain [subdomain]" >&2
-    exit 1
-fi
+# Main script logic
+main() {
+    local domain="$1"
+    local subdomain="$2"
+    
+    # If only domain is provided, check all default subdomains
+    if [ -z "$subdomain" ]; then
+        get_dns_info "$domain" "www"
+        get_dns_info "$domain" "lb-01" 
+        get_dns_info "$domain" "web-01"
+        get_dns_info "$domain" "web-02"
+    else
+        # If specific subdomain is provided, check only that one
+        get_dns_info "$domain" "$subdomain"
+    fi
+}
 
-domain=$1
-subdomain=$2
-
-# If only domain is provided, use default subdomains
-if [ -z "$subdomain" ]; then
-    # Use generic subdomains that work with any domain
-    for sub in www lb-01 web-01 web-02; do
-        get_dns_info "$domain" "$sub"
-    done
-else
-    # If both domain and subdomain are provided
-    get_dns_info "$domain" "$subdomain"
-fi
+# Call the main function with all arguments
+main "$@"
