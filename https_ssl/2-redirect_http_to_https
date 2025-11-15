@@ -1,21 +1,17 @@
 global
     daemon
     maxconn 256
-    log /dev/log local0
 
 defaults
     mode http
-    log global
-    option httplog
     timeout connect 5000ms
     timeout client 50000ms
     timeout server 50000ms
     option forwardfor
-    option http-server-close
 
 frontend http_front
     bind *:80
-    redirect scheme https code 301 if !{ ssl_fc }
+    redirect scheme https code 301
 
 frontend https_front
     bind *:443 ssl crt /etc/letsencrypt/live/www.ghislaine.tech/combined.pem
