@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-
 # Function to get server information using hardcoded IPs
 get_server_info() {
     local subdomain="$1"
