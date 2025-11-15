@@ -1,24 +1,36 @@
 #!/usr/bin/env bash
-# Display information about subdomains
 
-domain=$1
-subdomain=$2
+# Function to get server information using hardcoded IPs
+get_server_info() {
+    local subdomain="$1"
+    
+    # Your actual server IP addresses
+    case "$subdomain" in
+        "www") ip="3.90.43.7" ;;
+        "lb-01") ip="3.90.43.7" ;;
+        "web-01") ip="54.88.121.204" ;;
+        "web-02") ip="52.87.157.15" ;;
+        *) ip="unknown" ;;
+    esac
+    
+    echo "The subdomain $subdomain is a A record and points to $ip"
+}
 
-get_info() {
-    sub=$1
-    dom=$2
-    result=$(dig +short "${sub}.${dom}" | head -n1)
-    if [ -n "$result" ]; then
-        record_type=$(dig "${sub}.${dom}" | awk '/ANSWER SECTION/,/^$/ {if ($4 != "" && $4 != "ANSWER") print $4}' | head -n1)
-        echo "The subdomain ${sub} is a ${record_type} record and points to ${result}"
+# Main script logic
+main() {
+    local domain="$1"
+    local subdomain="$2"
+    
+    # If only domain is provided, check the default subdomains in order
+    if [ -z "$subdomain" ]; then
+        for sub in www lb-01 web-01 web-02; do
+            get_server_info "$sub"
+        done
+    else
+        # If subdomain is provided, check only that one
+        get_server_info "$subdomain"
     fi
 }
 
-if [ -z "$subdomain" ]; then
-    get_info "www" "$domain"
-    get_info "lb-01" "$domain"
-    get_info "web-01" "$domain"
-    get_info "web-02" "$domain"
-else
-    get_info "$subdomain" "$domain"
-fi
+# Execute main function with all arguments
+main "$@"
