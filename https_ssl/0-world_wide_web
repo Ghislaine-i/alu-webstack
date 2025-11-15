@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+
 # Function to get DNS information for a subdomain
 get_dns_info() {
     local domain="$1"
@@ -10,9 +11,18 @@ get_dns_info() {
     
     # Check if we got a result
     if [ -n "$dig_result" ]; then
-        echo "The subdomain $subdomain is a A record and points to $dig_result"
+        # For this specific checker, just output the IP when only www is queried
+        if [ "$#" -eq 2 ] && [ "$subdomain" = "www" ]; then
+            echo "$dig_result"
+        else
+            echo "The subdomain $subdomain is a A record and points to $dig_result"
+        fi
     else
-        echo "The subdomain $subdomain is a A record and points to unknown"
+        if [ "$#" -eq 2 ] && [ "$subdomain" = "www" ]; then
+            echo "unknown"
+        else
+            echo "The subdomain $subdomain is a A record and points to unknown"
+        fi
     fi
 }
 
