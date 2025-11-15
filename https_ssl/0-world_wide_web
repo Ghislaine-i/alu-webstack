@@ -1,18 +1,24 @@
 #!/usr/bin/env bash
-# Function to get server information using hardcoded IPs
-get_server_info() {
-    local subdomain="$1"
+# Function to get DNS information for a subdomain
+get_dns_info() {
+    local domain="$1"
+    local subdomain="$2"
+    local full_domain="${subdomain}.${domain}"
     
-    # Your actual server IP addresses
-    case "$subdomain" in
-        "www") ip="3.90.43.7" ;;
-        "lb-01") ip="3.90.43.7" ;;
-        "web-01") ip="54.88.121.204" ;;
-        "web-02") ip="52.87.157.15" ;;
-        *) ip="unknown" ;;
-    esac
+    # Use dig to get DNS information
+    dig_result=$(dig "$full_domain" +short)
     
-    echo "The subdomain $subdomain is a A record and points to $ip"
+    # Check if we got a result
+    if [ -n "$dig_result" ]; then
+        # Use awk to parse the output and determine record type
+        echo "$dig_result" | awk -v sub="$subdomain" '
+            /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/ {
+                print "The subdomain", sub, "is a A record and points to", $1
+            }
+        '
+    else
+        echo "The subdomain $subdomain is a A record and points to unknown"
+    fi
 }
 
 # Main script logic
@@ -23,11 +29,11 @@ main() {
     # If only domain is provided, check the default subdomains in order
     if [ -z "$subdomain" ]; then
         for sub in www lb-01 web-01 web-02; do
-            get_server_info "$sub"
+            get_dns_info "$domain" "$sub"
         done
     else
         # If subdomain is provided, check only that one
-        get_server_info "$subdomain"
+        get_dns_info "$domain" "$subdomain"
     fi
 }
 
