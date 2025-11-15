@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Script to display information about subdomains
+
+domain="$1"
+subdomain="$2"
+
+check_subdomain() {
+    local sub="$1"
+    local dom="$2"
+    local result=$(dig +short "${sub}.${dom}" | head -n 1)
+    local record_type=$(dig "${sub}.${dom}" | grep -A1 "ANSWER SECTION" | tail -1 | awk '{print $4}')
+    
+    if [ -n "$result" ]; then
+        echo "The subdomain ${sub} is a ${record_type} record and points to ${result}"
+    fi
+}
+
+if [ -z "$subdomain" ]; then
+    # Check default subdomains
+    check_subdomain "www" "$domain"
+    check_subdomain "lb-01" "$domain"
+    check_subdomain "web-01" "$domain"
+    check_subdomain "web-02" "$domain"
+else
+    # Check specific subdomain
+    check_subdomain "$subdomain" "$domain"
+fi
