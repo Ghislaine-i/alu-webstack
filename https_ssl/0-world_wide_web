@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+
 # Function to get DNS information for a subdomain
 get_dns_info() {
     local domain="$1"
@@ -10,12 +11,7 @@ get_dns_info() {
     
     # Check if we got a result
     if [ -n "$dig_result" ]; then
-        # Use awk to parse the output and determine record type
-        echo "$dig_result" | awk -v sub="$subdomain" '
-            /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/ {
-                print "The subdomain", sub, "is a A record and points to", $1
-            }
-        '
+        echo "The subdomain $subdomain is a A record and points to $dig_result"
     else
         echo "The subdomain $subdomain is a A record and points to unknown"
     fi
